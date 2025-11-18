@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ta">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AgriEazee • Smart Crop Companion</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Nunito:wght@400;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root{
+      --green:#2e7d32; --leaf:#43a047; --earth:#8d6e63;
+      --sky:#faf9f5;   --paper:#fffdf8; --panel:#f5fff5;
+      --radius:18px;   --shadow:0 6px 16px rgba(0,0,0,.08);
+      --trans:.3s cubic-bezier(.25,.8,.25,1);
+    }
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      min-height:100vh;display:flex;flex-direction:column;
+      background:var(--sky) radial-gradient(rgba(0,0,0,.02) 1px,transparent 1px)/18px 18px;
+      font-family:Poppins,Nunito,system-ui,sans-serif;color:#313
+    }
+    header{
+      position:sticky;top:0;z-index:10;background:var(--paper);
+      padding:14px 26px;display:flex;align-items:center;gap:20px;box-shadow:var(--shadow)
+    }
+    header img{height:56px}
+    header .brand{
+      font-size:2.2rem;font-weight:800;
+      background:linear-gradient(135deg,var(--green),var(--leaf));
+      -webkit-background-clip:text;color:transparent;
+    }
+    main{flex:1;padding:40px 6vw;display:flex;flex-direction:column;align-items:center;gap:36px}
+    h2{
+      font-size:1.5rem;color:var(--green);margin-bottom:16px;display:flex;align-items:center;gap:8px
+    }
+    h2 .num{
+      background:var(--leaf);color:#fff;font-weight:700;padding:2px 12px;border-radius:50px;font-size:.85rem
+    }
+    .grid{
+      display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:22px;width:100%;max-width:1200px
+    }
+    .card{
+      background:var(--paper);border:1px solid #e5e8e5;border-radius:var(--radius);
+      padding:18px 8px;text-align:center;cursor:pointer;
+      box-shadow:0 2px 6px rgba(0,0,0,.04);transition:var(--trans)
+    }
+    .card:hover{transform:translateY(-8px) scale(1.03);box-shadow:var(--shadow)}
+    .card p{font-size:.9rem;font-weight:600;color:var(--earth)}
+    .card small{font-size:.75rem;color:#666}
+    .section{
+      width:100%;max-width:1100px;background:var(--panel);border:1px solid #d8e4d8;
+      border-radius:var(--radius);padding:30px 28px;box-shadow:var(--shadow);
+      animation:fade .5s ease
+    }
+    @keyframes fade{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+    .row{
+      display:flex;flex-wrap:wrap;justify-content:center;gap:24px;margin-top:14px
+    }
+    .box{
+      flex:1 1 230px;background:var(--paper);border:1px solid #e4e7e4;border-radius:var(--radius);
+      padding:22px 18px;text-align:center
+    }
+    .box h4{color:var(--green);margin-bottom:8px;font-size:.95rem}
+    .tag{
+      display:inline-block;background:var(--leaf);color:#fff;padding:4px 12px;border-radius:22px;font-size:.8rem;margin:4px 6px
+    }
+    button,select,input{
+      font-family:inherit;font-weight:700;font-size:.95rem;cursor:pointer;outline:none;border:none;transition:var(--trans)
+    }
+    button{
+      background:var(--green);color:#fff;padding:12px 26px;border-radius:30px;margin-top:14px
+    }
+    button:hover{background:#266c29}
+    select{
+      background:#fff;border:1px solid #c6d0c6;border-radius:30px;padding:11px 40px 11px 18px;box-shadow:0 1px 2px rgba(0,0,0,.04)
+    }
+    select:focus{border-color:var(--leaf)}
+    input[type="number"]{
+      width:110px;padding:10px;border:1px solid #c6d0c6;border-radius:12px;text-align:center;margin:10px 12px 12px 0
+    }
+    footer{text-align:center;font-size:.8rem;color:#666;padding:24px 0 14px}
+    @media(max-width:540px){
+      header .brand{font-size:1.7rem}.box{flex:1 1 100%}.row{flex-direction:column;align-items:center}
+    }
+    .dosebox{
+      flex:1 1 140px;background:var(--leaf);color:#fff;padding:18px;border-radius:var(--radius);
+      display:flex;flex-direction:column;align-items:center;gap:6px;font-weight:700;box-shadow:var(--shadow)
+    }
+    .dosebox span{font-size:1.1rem}
+  </style>
+</head>
+
+<body>
+<header>
+  <img src="lulu.png" alt="AgriEazee logo"><div class="brand">AgriEazee</div>
+</header>
+
+<main>
+  <section id="step1" class="section">
+    <h2><span class="num">1</span> தங்கள் பயிரை தேர்வு செய்க / Choose Your Crop</h2>
+    <div id="cropGrid" class="grid"></div>
+  </section>
+
+  <section id="needs" class="section" style="display:none"></section>
+  <section id="cures" class="section" style="display:none"></section>
+</main>
+
+<footer>© 2025 AgriEazee – Made with 🌱 for farmers</footer>
+
+<script>
+/* helper to build info boxes */
+const box=(icon,title,val)=>`<div class="box"><h4>${icon} ${title}</h4>${val}</div>`;
+
+/* 26-crop database with Tamil seasons + NPK/acre values */
+const db={
+  "Paddy (Rice)":{"ta":"நெல்","water":"32–48 mm","duration":"120–150 days","spacing":"20 × 15 cm",
+    "soil":"Clay loam","season":"ஆனி–ஆடி / கார்த்திகை–மார்கழி",npk:{n:35,p:25,k:20},
+    diseases:{
+      "Blast / வெடிப்பு":{chem:"Tricyclazole 0.6 g L⁻¹",nat:"Neem-cake 250 kg ha⁻¹ + Pseudomonas"},
+      "Brown Planthopper / பழுப்பு தொட்டான்":{chem:"Imidacloprid 0.3 mL L⁻¹",nat:"5 % neem extract"}
+    }},
+  "Ragi":{"ta":"ராகி","water":"25–35 mm","duration":"100–110 days","spacing":"30 × 10 cm",
+    "soil":"Red loam","season":"ஆனி–ஆடி",npk:{n:30,p:20,k:15},
+    diseases:{ "Blast / வெடிப்பு":{chem:"Carbendazim 1 g L⁻¹",nat:"Trichoderma seed coat"} }},
+  "Kambu (Pearl Millet)":{"ta":"கம்பு","water":"20–30 mm","duration":"85–90 days","spacing":"45 × 15 cm",
+    "soil":"Sandy loam","season":"ஆனி–ஐப்பசி",npk:{n:25,p:15,k:10},
+    diseases:{ "Downy Mildew / வெள்ளை பூசி":{chem:"Metalaxyl 2 g kg⁻¹ seed",nat:"Hot-water seed treatment"} }},
+  "Thinai (Foxtail Millet)":{"ta":"தினை","water":"18–25 mm","duration":"80–90 days","spacing":"25 × 10 cm",
+    "soil":"Well-drained loam","season":"ஆடி–ஆவணி",npk:{n:22,p:12,k:10},
+    diseases:{ "Rust / பிம்பு":{chem:"Propiconazole 1 mL L⁻¹",nat:"Sulphur dust"} }},
+  "Cholam (Sorghum)":{"ta":"சோளம்","water":"25–35 mm","duration":"105–115 days","spacing":"45 × 15 cm",
+    "soil":"Sandy loam","season":"ஆனி / புரட்டாசி",npk:{n:30,p:20,k:15},
+    diseases:{ "Stem Borer / தண்டு உளை":{chem:"Chlorpyrifos 2 mL L⁻¹",nat:"Release Trichogramma"} }},
+  "Maize (Corn)":{"ta":"மக்காசோளம்","water":"35–50 mm","duration":"90–105 days","spacing":"60 × 20 cm",
+    "soil":"Loam","season":"எல்லா மாதங்களும்",npk:{n:50,p:25,k:25},
+    diseases:{ "Fall Armyworm / விழும் படையான்":{chem:"Chlorantraniliprole 0.3 mL L⁻¹",nat:"Bt 2 g L⁻¹"} }},
+  "Black Gram":{"ta":"உளுந்து","water":"18–25 mm","duration":"75–90 days","spacing":"30 × 10 cm",
+    "soil":"Alluvial loam","season":"ஆனி–ஆவணி / கார்த்திகை–மாசி",npk:{n:10,p:24,k:12},
+    diseases:{ "YMV / மஞ்சள் வைரஸ்":{chem:"Thiamethoxam 0.25 g L⁻¹",nat:"Yellow sticky traps"} }},
+  "Green Gram":{"ta":"பச்சை பயறு","water":"18–25 mm","duration":"65–70 days","spacing":"30 × 10 cm",
+    "soil":"Sandy loam","season":"ஆனி–ஆடி / மாசி–பங்குனி",npk:{n:10,p:20,k:10},
+    diseases:{ "Powdery Mildew / பூச்சாணி":{chem:"Hexaconazole 1 mL L⁻¹",nat:"Baking soda 5 g L⁻¹"} }},
+  "Red Gram":{"ta":"துவரம்","water":"25–30 mm","duration":"160–180 days","spacing":"60 × 20 cm",
+    "soil":"Black-cotton soil","season":"ஆனி–ஆடி",npk:{n:12,p:24,k:12},
+    diseases:{ "Wilt / உலர் நோய்":{chem:"Carbendazim 1 g L⁻¹ drench",nat:"Trichoderma drench"} }},
+  "Bengal Gram":{"ta":"கடலை பயறு","water":"15–20 mm","duration":"110–120 days","spacing":"45 × 10 cm",
+    "soil":"Sandy-clay loam","season":"ஐப்பசி–கார்த்திகை",npk:{n:12,p:24,k:12},
+    diseases:{ "Pod Borer / கொட்டையூளி":{chem:"Spinosad 0.3 mL L⁻¹",nat:"Helicoverpa NPV"} }},
+  "Sugarcane":{"ta":"கரும்பு","water":"35–50 mm","duration":"10–14 m","spacing":"90 cm row",
+    "soil":"Alluvial loam","season":"மாசி–சித்திரை",npk:{n:100,p:50,k:50},
+    diseases:{ "Red Rot":{chem:"Carbendazim 1 g L⁻¹ set-dip",nat:"Hot-water 50 °C dip"} }},
+  "Cotton":{"ta":"பருத்தி","water":"30–40 mm","duration":"160–180 days","spacing":"75 × 30 cm",
+    "soil":"Black soil","season":"சித்திரை–வைகாசி / ஆடி",npk:{n:40,p:20,k:20},
+    diseases:{ "Bollworm":{chem:"Spinosad 0.3 mL L⁻¹",nat:"NPV + Trichogramma"} }},
+  "Groundnut":{"ta":"வேர்கடலை","water":"25–30 mm","duration":"105–120 days","spacing":"30 × 10 cm",
+    "soil":"Sandy loam","season":"ஆனி / கார்த்திகை",npk:{n:25,p:40,k:25},
+    diseases:{ "Leaf Spot / இலைப்புள்ளி":{chem:"Tebuconazole 1 mL L⁻¹",nat:"Garlic extract 5 %"} }},
+  "Gingelly (Sesame)":{"ta":"எள்ளு","water":"20–25 mm","duration":"90–100 days","spacing":"30 × 15 cm",
+    "soil":"Light loam","season":"ஆனி–ஆடி",npk:{n:25,p:15,k:15},
+    diseases:{ "Phyllody":{chem:"Diafenthiuron 1 g L⁻¹",nat:"Rogue infected plants"} }},
+  "Coconut":{"ta":"தேங்காய்","water":"50–60 L tree⁻¹ week⁻¹","duration":"7–8 yrs bearing","spacing":"8 × 8 m",
+    "soil":"Sandy loam","season":"எல்லா மாதங்களும்",npk:{n:40,p:20,k:60},
+    diseases:{ "Bud Rot":{chem:"Copper oxychloride 3 g L⁻¹",nat:"Neem-cake 2 kg tree⁻¹"} }},
+  "Banana":{"ta":"வாழை","water":"30–40 L plant⁻¹ week⁻¹","duration":"11–12 m","spacing":"1.8 × 1.8 m",
+    "soil":"Silty loam","season":"எல்லா மாதங்களும்",npk:{n:50,p:40,k:40},
+    diseases:{ "Sigatoka":{chem:"Propiconazole 1 mL L⁻¹",nat:"Neem oil 3 %"} }},
+  "Mango":{"ta":"மாம்பழம்","water":"25–30 L tree⁻¹ week⁻¹","duration":"3–4 yrs bearing","spacing":"10 × 10 m",
+    "soil":"Alluvial loam","season":"ஆடி–ஆவணி",npk:{n:20,p:20,k:20},
+    diseases:{ "Powdery Mildew":{chem:"Wettable sulphur 2 g L⁻¹",nat:"Cow-milk 10 % spray"} }},
+  "Onion":{"ta":"வெங்காயம்","water":"25–35 mm","duration":"110–130 days","spacing":"15 × 10 cm",
+    "soil":"Light loam","season":"ஐப்பசி–மார்கழி",npk:{n:25,p:12,k:12},
+    diseases:{ "Purple Blotch":{chem:"Iprodione 2 g L⁻¹",nat:"Trichoderma spray"} }},
+  "Tomato":{"ta":"தக்காளி","water":"30–40 mm","duration":"90–100 days","spacing":"60 × 45 cm",
+    "soil":"Loam","season":"ஆவணி–புரட்டாசி / தை–மாசி",npk:{n:50,p:25,k:25},
+    diseases:{ "Early Blight":{chem:"Mancozeb 2 g L⁻¹",nat:"Potassium bicarb 5 g L⁻¹"} }},
+  "Brinjal (Eggplant)":{"ta":"கத்திரிக்காய்","water":"25–35 mm","duration":"120–130 days","spacing":"60 × 45 cm",
+    "soil":"Sandy loam","season":"ஆனி / ஐப்பசி",npk:{n:50,p:25,k:25},
+    diseases:{ "Shoot & Fruit Borer":{chem:"Emamectin 0.4 g L⁻¹",nat:"Neem-seed extract 5 %"} }},
+  "Tapioca":{"ta":"மரவள்ளி","water":"20–25 mm","duration":"9–12 m","spacing":"90 × 90 cm",
+    "soil":"Loamy-sandy","season":"சித்திரை–வைகாசி",npk:{n:40,p:50,k:50},
+    diseases:{ "Cassava Mosaic":{chem:"No curative",nat:"Virus-free cuttings"} }},
+  "Turmeric":{"ta":"மஞ்சள்","water":"30–40 mm","duration":"210–240 days","spacing":"45 × 15 cm",
+    "soil":"Loamy","season":"சித்திரை–வைகாசி",npk:{n:30,p:20,k:20},
+    diseases:{ "Rhizome Rot":{chem:"Metalaxyl 2 g L⁻¹",nat:"Trichoderma in soil"} }},
+  "Chillies":{"ta":"மிளகாய்","water":"25–35 mm","duration":"150–180 days","spacing":"45 × 45 cm",
+    "soil":"Well-drained loam","season":"ஆனி / ஐப்பசி",npk:{n:40,p:25,k:25},
+    diseases:{ "Anthracnose":{chem:"Carbendazim 1 g L⁻¹",nat:"Neem-cake 200 kg ha⁻¹"} }},
+  "Coffee":{"ta":"காபி","water":"வெள்ளம் + 50 mm","duration":"3–4 yrs","spacing":"1.8 × 1.8 m",
+    "soil":"Humus-rich loam","season":"ஆனி",npk:{n:40,p:30,k:40},
+    diseases:{ "Leaf Rust":{chem:"Bordeaux mix 1 %",nat:"Maintain shade trees"} }},
+  "Tea":{"ta":"தேயிலை","water":"1500–2000 mm yr⁻¹","duration":"4–5 yrs","spacing":"1 × 1 m",
+    "soil":"Acidic loam","season":"எல்லா மாதங்களும்",npk:{n:50,p:30,k:50},
+    diseases:{ "Blister Blight":{chem:"Copper oxychloride 3 g L⁻¹",nat:"Prune infected shoots"} }},
+  "Cashew":{"ta":"முந்திரி","water":"600–1200 mm yr⁻¹","duration":"3–4 yrs","spacing":"7 × 7 m",
+    "soil":"Lateritic","season":"ஆனி–ஆடி",npk:{n:20,p:12,k:12},
+    diseases:{ "Powdery Mildew":{chem:"Wettable sulphur 2 g L⁻¹",nat:"Garlic-oil 5 mL L⁻¹"} }}
+};
+
+/* build crop grid */
+const grid=document.getElementById("cropGrid");
+Object.entries(db).forEach(([en,c])=>{
+  const card=document.createElement("div");
+  card.className="card";
+  card.innerHTML=`<p>${c.ta}<br><small>${en.split(" (")[0]}</small></p>`;
+  card.onclick=()=>showNeeds(en);
+  grid.appendChild(card);
+});
+
+/* step-2 panel */
+function showNeeds(crop){
+  const d=db[crop], wrap=document.getElementById("needs");
+  wrap.innerHTML=
+    `<h2><span class="num">2</span> அடிப்படை தேவைகள் / Basic Requirements – <span style="color:var(--earth)">${d.ta}</span></h2>
+    <div class="row">
+      ${box("💧","Water",d.water)}${box("⏳","Duration",d.duration)}
+      ${box("📐","Spacing",d.spacing)}${box("🌱","Soil",d.soil)}
+      ${box("☀️","Season",d.season)}
+    </div>
+
+    <h3 style="margin:22px 0 12px;color:var(--earth);font-weight:700">உர கணக்கீடு / Fertiliser Dose Calculator</h3>
+    <label>Area (ac): <input type="number" id="areaIn" min="0.1" step="0.1"></label>
+    <button onclick="calcDose('${crop}')">Calculate</button>
+    <div id="doseOut" class="row" style="margin:18px 0"></div>
+
+    <h3 style="margin:14px 0 8px;color:var(--earth);font-weight:700">பொது நோய்கள் / Common Diseases</h3>
+    ${Object.keys(d.diseases).map(z=>`<span class="tag">${z}</span>`).join("")}
+    <div style="text-align:center;margin-top:26px">
+      <button onclick="openCures('${crop}')">🔎 Remedies</button>
+    </div>`;
+  wrap.style.display='block';
+  document.getElementById("cures").style.display='none';
+  setTimeout(()=>wrap.scrollIntoView({behavior:"smooth"}),60);
+}
+
+/* dose calculator */
+function calcDose(crop){
+  const area=parseFloat(document.getElementById("areaIn").value||0);
+  if(area<=0){alert("Enter valid area");return;}
+  const {n,p,k}=db[crop].npk, out=document.getElementById("doseOut");
+  out.innerHTML=[["N",n],["P₂O₅",p],["K₂O",k]]
+    .map(([lab,val])=>`<div class="dosebox"><span>${(val*area).toFixed(1)} kg</span>${lab}</div>`).join("");
+}
+
+/* disease remedies */
+function openCures(crop){
+  const d=db[crop], wrap=document.getElementById("cures");
+  wrap.innerHTML=
+    `<h2><span class="num">3</span> Remedies – ${d.ta}</h2>
+    <label style="font-weight:600;display:block;margin-bottom:16px">
+      Select Disease:
+      <select onchange="showRem('${crop}',this.value)">
+        <option value="">--</option>${Object.keys(d.diseases).map(k=>`<option>${k}</option>`).join("")}
+      </select>
+    </label>
+    <div id="remBox" class="row"></div>`;
+  wrap.style.display='block';
+  setTimeout(()=>wrap.scrollIntoView({behavior:"smooth"}),60);
+}
+function showRem(crop,dis){
+  const info=db[crop].diseases[dis]||{}, target=document.getElementById("remBox");
+  target.innerHTML=dis?box("💊","Chemical",info.chem)+box("🌿","Natural",info.nat):"";
+}
+</script>
+</body>
+</html>
